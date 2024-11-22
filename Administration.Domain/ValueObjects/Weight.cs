@@ -17,5 +17,8 @@ namespace Administration.Domain.ValueObjects
             }
             Value = value;
         }
+        // Caster fra decimal til Weight
+        public static implicit operator Weight(decimal value) => new Weight(value);
     }
+    
 }

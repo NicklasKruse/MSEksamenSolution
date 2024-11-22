@@ -1,4 +1,5 @@
 ﻿using Administration.Domain.DomainServices;
+using Administration.Domain.Enums;
 using Administration.Domain.ValueObjects;
 
 namespace Administration.Domain.Entities
@@ -26,23 +27,34 @@ namespace Administration.Domain.Entities
             Weight = weight;
 
         }
+        /// <summary>
+        /// Sætter vægtklassen for dyret baseret på vægt og kategori 
+        /// </summary>
+        /// <param name="speciesService"></param>
+        /// <exception cref="ArgumentException"></exception>
         private void SetWeightClass(ISpeciesService speciesService)
         {
             var species = speciesService.GetSpecies(SpeciesId.Value);
 
+            var (min, max) = Category switch // Pattern matching switch expression
+            {
+                Category.Type_A => (species.IdealWeight.Min, species.IdealWeight.Max),
+                Category.Type_B => (species.IdealWeight.Min, species.IdealWeight.Max),
+                _ => throw new ArgumentException("Invalid category") // _ kaldes discard pattern 
 
+            };
+
+            if (Weight.Value <= 0)
+            {
+                throw new ArgumentException("Weight must be positive");
+            }
+
+            WeightClass = Weight.Value switch
+            {
+                var w when w < min => WeightClass.Light,
+                var w when w > max => WeightClass.Heavy,
+                _ => WeightClass.Medium // når ingen af de to ovenstående er true
+            };
         }
-    }
-   
-    public enum Category
-    {
-        Type_A,
-        Type_B,
-    }
-    public enum WeightClass
-    {
-        Light,
-        Medium,
-        Heavy
     }
 }
