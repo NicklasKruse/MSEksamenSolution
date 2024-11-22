@@ -9,16 +9,16 @@ namespace Administration.Domain.Entities
         public string Name { get; init; } // init gør den immutable og readonly
         public Weight Weight { get; private set; }
         public WeightClass WeightClass { get; private set; }
-        public EnumExample EnumExample { get; set; }
+        public Category Category { get; set; }
 
         public SpeciesId SpeciesId { get; set; }
 
 
-        public Animal(Guid id, string name, EnumExample enumExample, SpeciesId speciesId)
+        public Animal(Guid id, string name, Category Category, SpeciesId speciesId)
         {
             Id = id;
             Name = name;
-            EnumExample = enumExample;
+            Category = Category;
             SpeciesId = speciesId;
         }
         public void SetWeight(Weight weight)
@@ -30,19 +30,14 @@ namespace Administration.Domain.Entities
         {
             var species = speciesService.GetSpecies(SpeciesId.Value);
 
-            var (from, to) = EnumExample switch
-            {
-                EnumExample.EnumValue1 => (species.IdealWeight.From, species.IdealWeight.To),
-                EnumExample.EnumValue2 => (species.IdealWeight.From * 2, species.IdealWeight.To * 2),
-                _ => (0, 0)
-            };
+
         }
     }
    
-    public enum EnumExample
+    public enum Category
     {
-        EnumValue1,
-        EnumValue2,
+        Type_A,
+        Type_B,
     }
     public enum WeightClass
     {

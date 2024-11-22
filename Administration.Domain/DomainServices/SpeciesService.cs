@@ -21,5 +21,6 @@ namespace Administration.Domain.DomainServices
             var result = _species.FirstOrDefault(s => s.Id == speciesId);
             return result ?? throw new ArgumentException("Species not found");
         }
-    }}
+    }
 }
+
