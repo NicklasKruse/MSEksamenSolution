@@ -1,4 +1,4 @@
-﻿namespace Administration.Domain
+﻿namespace CommonAssets
 {
     public abstract class Entity : IEquatable<Entity>
     {

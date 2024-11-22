@@ -1,6 +1,7 @@
 ﻿using Administration.Domain.DomainServices;
 using Administration.Domain.Enums;
 using Administration.Domain.ValueObjects;
+using CommonAssets;
 
 namespace Administration.Domain.Entities
 {
