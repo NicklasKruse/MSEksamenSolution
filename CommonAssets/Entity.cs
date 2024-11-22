@@ -1,5 +1,9 @@
 ﻿namespace CommonAssets
 {
+    /// <summary>
+    /// Implementerer explicit IEquatable<Entity> funktioner så vi kan bevare arvestrukturen. 
+    /// En simpel record har samme funktion, men arvestrukturen går tabt. Da classes og records ikke kan arve fra hinanden.
+    /// </summary>
     public abstract class Entity : IEquatable<Entity>
     {
         public Guid Id { get; init; } // init gør den immutable og readonly

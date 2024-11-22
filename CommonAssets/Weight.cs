@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Administration.Domain.ValueObjects
+namespace CommonAssets
 {
     public record Weight
     {
@@ -20,5 +20,5 @@ namespace Administration.Domain.ValueObjects
         // Caster fra decimal til Weight
         public static implicit operator Weight(decimal value) => new Weight(value);
     }
-    
+
 }
