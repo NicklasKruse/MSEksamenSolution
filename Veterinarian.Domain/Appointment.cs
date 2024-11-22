@@ -19,6 +19,7 @@ namespace Veterinarian.Domain
             Status = AppointmentStatus.Active;
             CreatedAtTime = DateTime.UtcNow;
         }
+        
         public void SetCurrentWeight(Weight weight)
         {
             ValidateAppointment();
@@ -36,19 +37,33 @@ namespace Veterinarian.Domain
             ValidateAppointment();
             Treatment = treatment;
         }
+
+
+        #region Set Appointment Status Methods
         public void CompleteAppointment()
         {
             //Kan ikke afslutte en afsluttet eller aflyst aftale
             ValidateAppointment();
 
-            if(Diagnosis == null)
+            if (Diagnosis == null)
                 throw new InvalidOperationException("Diagnosis must be set before completing the appointment");
-            if(Treatment == null)
+            if (Treatment == null)
                 throw new InvalidOperationException("Treatment must be set before completing the appointment");
 
             Status = AppointmentStatus.Completed;
             CompletedAtTime = DateTime.UtcNow;
         }
+        public void CancelAppointment()
+        {
+            //Kan ikke aflyse en afsluttet eller aflyst aftale
+            ValidateAppointment();
+            Status = AppointmentStatus.Cancelled;
+        }
+
+        /// <summary>
+        /// Validering af Appointment aggregat
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         private void ValidateAppointment()
         {
             if (Status == AppointmentStatus.Completed)
@@ -67,7 +82,10 @@ namespace Veterinarian.Domain
                 //throw new DomainException("Cannot update a pending appointment");
             }
         }
+        #endregion
     }
+
+    #region ValueObjects
     /// <summary>
     /// Disse ord er en del af vores ubiquitous language. Det er ord med fælles forståelse mellem udviklere og forretning.
     /// </summary>
@@ -78,4 +96,5 @@ namespace Veterinarian.Domain
         Completed,
         Cancelled
     }
+    #endregion
 }
