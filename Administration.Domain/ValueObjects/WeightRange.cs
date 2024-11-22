@@ -1,4 +1,4 @@
-﻿namespace Administration.Domain
+﻿namespace Administration.Domain.ValueObjects
 {
     public record WeightRange
     {
@@ -17,4 +17,4 @@
             Min = min;
             Max = max;
         }
-}
+    }
