@@ -1,0 +1,75 @@
+version: '3.4'
+
+services:
+  administration.api:
+    image: ${DOCKER_REGISTRY-}administrationapi
+    build:
+      context: .
+      dockerfile: Administration.Api/Dockerfile
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver1;Database=AdministrationDB;User Id=sa;Password=admin123;
+    depends_on:
+      - sqlserver1
+      - rabbitmq
+    networks:
+      - administrationapi-network
+      - rabbitmq-network
+
+  sqlserver1:
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=admin123
+    ports:
+      - "1433:1433"
+    networks:
+      - administrationapi-network
+
+  veterinarian.api:
+    image: ${DOCKER_REGISTRY-}veterinarianapi
+    build:
+      context: .
+      dockerfile: Veterinarian.Api/Dockerfile
+    ports:
+      - "5002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver2;Database=VeterinarianDB;User Id=sa;Password=admin123;
+    depends_on:
+      - sqlserver2
+      - rabbitmq
+    networks:
+      - veterinarianapi-network
+      - rabbitmq-network
+
+  sqlserver2:
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=admin123
+    ports:
+      - "1434:1433"
+    networks:
+      - veterinarianapi-network
+
+  rabbitmq:
+    image: "rabbitmq:management"
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - rabbitmq-network
+
+networks:
+  administrationapi-network:
+    name: administrationapi-network
+  veterinarianapi-network:
+    name: veterinarianapi-network
+  rabbitmq-network:
+    name: rabbitmq-network
