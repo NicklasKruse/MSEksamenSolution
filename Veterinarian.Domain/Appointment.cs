@@ -1,11 +1,14 @@
 ﻿using CommonAssets;
+using CommonAssets.ResultPattern;
 using Veterinarian.Domain.ValueObjects;
+using Veterinarian.Domain.ValueObjects.CaseHealthStatusObjects;
 
 namespace Veterinarian.Domain
 {
     public class Appointment : AggregateRoot
     {
         private readonly List<MedicineDispencer> medicineAdministered = new();
+        private readonly List<CaseHealthStatus> caseHealthStatusReadings = new();
 
         public DateTime CreatedAtTime { get; init; }
         public DateTime? CompletedAtTime { get; private set; }
@@ -15,6 +18,7 @@ namespace Veterinarian.Domain
         public Weight RecordedWeight { get; private set; }
         public AppointmentStatus Status { get; private set; }
         public IReadOnlyList<MedicineDispencer> MedicineAdministered => medicineAdministered; //For ikke at skulle expose min liste direkte. Kan man nu tilgå listen igennem denne property
+        public IReadOnlyList<CaseHealthStatus> CaseHealthStatusReadings => caseHealthStatusReadings; // Samme som ovenstående
         public Appointment(CaseId caseId)
         {
             Id = Guid.NewGuid();
@@ -22,7 +26,43 @@ namespace Veterinarian.Domain
             Status = AppointmentStatus.Active;
             CreatedAtTime = DateTime.UtcNow;
         }
+        /// <summary>
+        /// IEnumerable så vi kan modtage flere status checks over tid, og ikke kun en ad gangen
+        /// </summary>
+        /// <param name="caseHealthStatuses"></param>
+        public Result RegisterCaseHealthStatus(IEnumerable<CaseHealthStatus> caseHealthStatuses)
+        {
+            ValidateAppointment();
 
+            var validationResults = new List<string>();
+            var validReadings = new List<CaseHealthStatus>();
+
+            foreach(var caseHealthStatus in caseHealthStatuses)
+            {
+                var result = CaseHealthStatus.Create(
+                    caseHealthStatus.CurrentTemperature,
+                    caseHealthStatus.HeartRate,
+                    caseHealthStatus.RespiratoryRate,
+                    caseHealthStatus.Condition,
+                    caseHealthStatus.AssessmentTime,
+                    caseHealthStatus.Notes);
+                if(result.IsSuccess)
+                {
+                    validReadings.Add(result.Value);
+                }
+                else
+                {
+                    validationResults.Add(result.Error);
+                }
+            }
+            if(validationResults.Any())
+            {
+                throw new InvalidOperationException($"Invalid case health status readings: {string.Join(", ", validationResults)}");
+            }
+
+            caseHealthStatusReadings.AddRange(caseHealthStatuses);
+            return Result.Success();
+        }
         public void DispenceMedicine(MedicineId medicineId, MedicineDosage medicineDosage)
         {
             ValidateAppointment();

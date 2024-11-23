@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CommonAssets.ResultPattern
+﻿namespace CommonAssets.ResultPattern
 {
     //Result class med generisk type
     public class Result<T>
@@ -36,9 +30,10 @@ namespace CommonAssets.ResultPattern
             IsSuccess = isSuccess;
             Error = error;
         }
-
         public static Result Success() => new Result(true, string.Empty);
         public static Result Failure(string error) => new Result(false, error);
+        
+        public static Result<T> Success<T>(T value) => Result<T>.Success(value);
+        public static Result<T> Failure<T>(string error) => Result<T>.Failure(error);
     }
-
 }
