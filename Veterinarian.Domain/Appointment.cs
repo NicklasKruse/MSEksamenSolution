@@ -55,10 +55,6 @@ namespace Veterinarian.Domain
                     validationResults.Add(result.Error);
                 }
             }
-            if(validationResults.Any())
-            {
-                throw new InvalidOperationException($"Invalid case health status readings: {string.Join(", ", validationResults)}");
-            }
 
             caseHealthStatusReadings.AddRange(caseHealthStatuses);
             return Result.Success();
