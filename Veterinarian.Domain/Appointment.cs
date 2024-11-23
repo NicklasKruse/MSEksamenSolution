@@ -5,6 +5,8 @@ namespace Veterinarian.Domain
 {
     public class Appointment : AggregateRoot
     {
+        private readonly List<MedicineDispencer> medicineAdministered = new();
+
         public DateTime CreatedAtTime { get; init; }
         public DateTime? CompletedAtTime { get; private set; }
         public Text Diagnosis { get; private set; }
@@ -12,12 +14,21 @@ namespace Veterinarian.Domain
         public CaseId CaseId { get; init; }
         public Weight RecordedWeight { get; private set; }
         public AppointmentStatus Status { get; private set; }
+        public IReadOnlyList<MedicineDispencer> MedicineAdministered => medicineAdministered; //For ikke at skulle expose min liste direkte. Kan man nu tilgå listen igennem denne property
         public Appointment(CaseId caseId)
         {
             Id = Guid.NewGuid();
             CaseId = caseId;
             Status = AppointmentStatus.Active;
             CreatedAtTime = DateTime.UtcNow;
+        }
+
+        public void DispenceMedicine(MedicineId medicineId, MedicineDosage medicineDosage)
+        {
+            ValidateAppointment();
+
+            var medicineDispencer = new MedicineDispencer(medicineId, medicineDosage);
+            medicineAdministered.Add(medicineDispencer);
         }
         
         public void SetCurrentWeight(Weight weight)

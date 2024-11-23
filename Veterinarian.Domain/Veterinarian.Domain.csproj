@@ -10,4 +10,8 @@
     <ProjectReference Include="..\CommonAssets\CommonAssets.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ValueObjects\CaseHealthStatusObjects\" />
+  </ItemGroup>
+
 </Project>
