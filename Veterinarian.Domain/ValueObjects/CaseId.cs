@@ -11,6 +11,19 @@
             }
             Value = value;
         }
+        public static CaseId Create(Guid value)
+        {
+            return new CaseId(value);
+        }
+
+        //private void ValidateCase(Guid value)
+        //{
+        //    if (caseService.GetCases(value) == null)
+        //    {
+        //        throw new ArgumentException("Case not found");
+        //    }
+        //}
+
         // Caster fra Guid til CaseId
         public static implicit operator CaseId(Guid value) => new CaseId(value);
     }
