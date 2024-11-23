@@ -7,15 +7,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Administration.Domain", "Ad
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Administration.Api", "Administration.Api\Administration.Api.csproj", "{991ED442-84D0-4220-9F05-8F7D6EB63DEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veterinarian.Domain", "Veterinarian.Domain\Veterinarian.Domain.csproj", "{46CAD7D2-7974-40AC-A5CC-9F485FC22E04}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veterinarian.Domain", "Veterinarian.Domain\Veterinarian.Domain.csproj", "{46CAD7D2-7974-40AC-A5CC-9F485FC22E04}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veterinarian.Api", "Veterinarian.Api\Veterinarian.Api.csproj", "{1E45E2BB-7924-4892-ADA3-EFC63EA3AAC5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veterinarian.Api", "Veterinarian.Api\Veterinarian.Api.csproj", "{1E45E2BB-7924-4892-ADA3-EFC63EA3AAC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonAssets", "CommonAssets\CommonAssets.csproj", "{6C7A5C62-7E49-4D6D-ACD2-D8C68B4DFBEE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonAssets", "CommonAssets\CommonAssets.csproj", "{6C7A5C62-7E49-4D6D-ACD2-D8C68B4DFBEE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DbContextLibraries", "DbContextLibraries", "{70322354-6682-4BE0-BF09-D8A56F3341AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Administration.ContextLibrary", "Administration.ContextLibrary\Administration.ContextLibrary.csproj", "{F0C11EC8-B0D9-4A98-8E11-38ED863607E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Administration.ContextLibrary", "Administration.ContextLibrary\Administration.ContextLibrary.csproj", "{F0C11EC8-B0D9-4A98-8E11-38ED863607E8}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{B4286FE7-88B4-494D-98AB-DB008E72F2DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veterinarian.ContextLibrary", "Veterinarian.ContextLibrary\Veterinarian.ContextLibrary.csproj", "{B52EC734-5EB9-4917-942C-FB1D542185AE}"
 EndProject
