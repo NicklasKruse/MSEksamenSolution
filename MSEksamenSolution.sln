@@ -19,7 +19,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Administration.ContextLibra
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{B4286FE7-88B4-494D-98AB-DB008E72F2DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Veterinarian.ContextLibrary", "Veterinarian.ContextLibrary\Veterinarian.ContextLibrary.csproj", "{B52EC734-5EB9-4917-942C-FB1D542185AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veterinarian.ContextLibrary", "Veterinarian.ContextLibrary\Veterinarian.ContextLibrary.csproj", "{B52EC734-5EB9-4917-942C-FB1D542185AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{67ABBEAA-DB8B-4D2A-B617-F207A740268D}"
+	ProjectSection(SolutionItems) = preProject
+		pubsub.yaml = pubsub.yaml
+		statestore.yaml = statestore.yaml
+		subscription.yaml = subscription.yaml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
