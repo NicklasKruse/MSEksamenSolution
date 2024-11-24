@@ -17,7 +17,22 @@ services:
     networks:
       - administrationapi-network
       - rabbitmq-network
-
+# dapr sidecar til administration.api
+  administration-dapr:
+    image: "daprio/daprd:edge"
+    command: [
+      "./daprd",
+      "-app-id", "administration-api",
+      "-app-port", "80",
+      "-components-path", "/components",
+      "-config", "/components/config.yaml"
+    ]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - administration.api
+    network_mode: "service:administration.api"
+#sql server til administration.api
   sqlserver1:
     image: "mcr.microsoft.com/mssql/server:2019-latest"
     environment:
@@ -44,7 +59,23 @@ services:
     networks:
       - veterinarianapi-network
       - rabbitmq-network
+# dapr sidecar til veterinarian.api
+  veterinarian-dapr:
+    image: "daprio/daprd:edge"
+    command: [
+      "./daprd",
+      "-app-id", "veterinarian-api",
+      "-app-port", "80",
+      "-components-path", "/components",
+      "-config", "/components/config.yaml"
+    ]
+    volumes:
+      - "./components/:/components"
+    depends_on:
+      - veterinarian.api
+    network_mode: "service:veterinarian.api"
 
+    #sql server til veterinarian.api
   sqlserver2:
     image: "mcr.microsoft.com/mssql/server:2019-latest"
     environment:
@@ -55,6 +86,7 @@ services:
     networks:
       - veterinarianapi-network
 
+      #rabbitmq container
   rabbitmq:
     image: "rabbitmq:management"
     ports:
