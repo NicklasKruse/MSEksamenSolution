@@ -11,8 +11,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //dapr
-builder.Services.AddDapr();
 builder.Services.AddControllers().AddDapr();
+
+// ved explicit pubsub 
+//builder.Services.AddControllers()
+//    .AddDapr(config => config
+//    .UseGrpcEndpoint($"http://localhost:{daprGrpcPort}"));
 
 builder.Services.AddDbContext<VeterinarianDbContext>(options =>
 {

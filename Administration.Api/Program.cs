@@ -1,4 +1,5 @@
 using Administration.ContextLibrary;
+using Administration.Domain.DomainServices;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,13 +12,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //dapr
-builder.Services.AddDapr();
 builder.Services.AddControllers().AddDapr();
+
+// ved explicit pubsub 
+//builder.Services.AddControllers()
+//    .AddDapr(config => config
+//    .UseGrpcEndpoint($"http://localhost:{daprGrpcPort}"));
 
 builder.Services.AddDbContext<AdministrationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddScoped<ISpeciesService, SpeciesService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
