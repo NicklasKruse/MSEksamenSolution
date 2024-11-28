@@ -23,9 +23,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Veterinarian.ContextLibrary
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", "{67ABBEAA-DB8B-4D2A-B617-F207A740268D}"
 	ProjectSection(SolutionItems) = preProject
+		config.yaml = config.yaml
 		pubsub.yaml = pubsub.yaml
 		statestore.yaml = statestore.yaml
 		subscription.yaml = subscription.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12AA1AD3-D42C-4249-A1E6-6183C790BA47}"
+	ProjectSection(SolutionItems) = preProject
+		dapr.yaml = dapr.yaml
 	EndProjectSection
 EndProject
 Global

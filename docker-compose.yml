@@ -105,3 +105,5 @@ networks:
     name: veterinarianapi-network
   rabbitmq-network:
     name: rabbitmq-network
+  dapr-network:
+    name: dapr-network

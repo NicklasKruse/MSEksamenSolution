@@ -1,0 +1,64 @@
+version: 1
+common:
+  resourcesPath: ./components/
+
+apps:
+  - appID: administration-api
+    appPort: 80
+    appProtocol: http
+    command: ["dotnet", "run"]
+    enabled: true
+    env:
+      - name: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - name: ConnectionStrings__DefaultConnection
+        value: Server=sqlserver1;Database=AdministrationDB;User Id=sa;Password=admin123; # ${ConnectionStrings__DefaultConnection}
+    dependencies:
+      - name: sqlserver1
+      - name: rabbitmq
+
+  - appID: veterinarian-api
+    appPort: 80
+    appProtocol: http
+    command: ["dotnet", "run"]
+    enabled: true
+    env:
+      - name: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - name: ConnectionStrings__DefaultConnection
+        value: Server=sqlserver2;Database=VeterinarianDB;User Id=sa;Password=admin123; # ${ConnectionStrings__DefaultConnection}
+    dependencies:
+      - name: sqlserver2
+      - name: rabbitmq
+
+resources:
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env:
+      - name: RABBITMQ_DEFAULT_USER
+        value: guest
+      - name: RABBITMQ_DEFAULT_PASS
+        value: guest
+
+  sqlserver1:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1433:1433"
+    env:
+      - name: ACCEPT_EULA
+        value: "Y"
+      - name: SA_PASSWORD
+        value: admin123
+
+  sqlserver2:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1434:1433"
+    env:
+      - name: ACCEPT_EULA
+        value: "Y"
+      - name: SA_PASSWORD
+        value: admin123
