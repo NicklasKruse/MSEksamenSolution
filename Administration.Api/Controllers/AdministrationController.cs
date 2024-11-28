@@ -1,10 +1,13 @@
+using Administration.Api.Workflows.Activities;
 using Administration.Domain.DomainServices;
 using Administration.Domain.Entities;
 using Administration.Domain.ValueObjects;
 using CommonAssets;
 using CommonAssets.EventDtos;
 using Dapr.Client;
+using Dapr.Workflow;
 using Microsoft.AspNetCore.Mvc;
+using System.Reactive;
 
 namespace Administration.Api.Controllers
 {
@@ -48,7 +51,7 @@ namespace Administration.Api.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        // Anden version
+        //Anden version
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Animal animal)
         {
@@ -96,15 +99,86 @@ namespace Administration.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> WorkflowCreateExample(AnimalCreatedEvent animalCreatedEvent)
         {
-            await _daprClient.RaiseWorkflowEventAsync("animal-workflow", "create", animalCreatedEvent);
+            await _daprClient.RaiseWorkflowEventAsync("animal-workflow", "create","EventName", animalCreatedEvent);
             return Ok();
         }
 
-    }
-    public class OrderWorkflow : Workflow<Animal, AnimalCreatedEvent>
-    {
+        ///////////////////////////////////
+        [HttpPost]
+        public async Task<IActionResult> NewCreateAnimal([FromBody] Animal animal)
+        {
+            try
+            {
+                var workflowId = Guid.NewGuid().ToString();
+                var startResponse = await _daprClient.StartWorkflowAsync(
+                    "animal-workflow",
+                    "dapr",
+                    workflowId,
+                    animal);
 
+                return AcceptedAtAction(nameof(GetWorkflowStatus),
+                    new { workflowId = startResponse.InstanceId },
+                    new { workflowId = startResponse.InstanceId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start animal creation workflow");
+                return StatusCode(500, new { error = "Failed to process request" });
+            }
+        }
+
+        [HttpGet("workflow/{workflowId}")]
+        public async Task<IActionResult> GetWorkflowStatus(string workflowId)
+        {
+            try
+            {
+                var state = await _daprClient.GetWorkflowAsync(workflowId, "dapr");
+                return Ok(state);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get workflow status");
+                return StatusCode(500, new { error = "Failed to get workflow status" });
+            }
+        }
+
+        ///////////////////////////////////
     }
+    public class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
+    {
+        private readonly ISpeciesService SpeciesService;
+        public AnimalWorkflow(ISpeciesService speciesService)
+        {
+            SpeciesService = speciesService;
+        }
+        public override async Task<AnimalCreatedEvent> RunAsync(WorkflowContext context, Animal animal)
+        {
+            var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
+         
+
+            var newAnimal = await context.CallActivityAsync<Animal>(
+               nameof(CreateAnimalActivity),
+               new CreateAnimalRequest(animal, speciesId));
+
+            newAnimal.SetWeight(new Weight(animal.Weight.Value));
+
+
+
+            await context.CallActivityAsync("CreateAnimal", newAnimal);
+            await context.CallActivityAsync(
+           nameof(NotifyActivity),
+           new Domain.ValueObjects.Notification("Completed Reg.", newAnimal));
+
+            return new AnimalCreatedEvent
+            {
+                Id = newAnimal.Id,
+                Name = newAnimal.Name,
+                //Category = newAnimal.Category,
+                //Weight = newAnimal.Weight.Value,
+                //SpeciesId = newAnimal.SpeciesId.Value
+            };
+        }
     }
+}
 
 
