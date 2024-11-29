@@ -13,22 +13,29 @@ namespace Administration.Api.Controllers
     public class AdministrationController : ControllerBase
     {
         private readonly DaprClient _daprClient;
-        private readonly ISpeciesService SpeciesService;
+        private readonly ISpeciesService _speciesService;
         private readonly ILogger<AdministrationController> _logger;
 
-        public AdministrationController(DaprClient daprClient, ISpeciesService speciesService, ILogger<AdministrationController> logger)
+        public AdministrationController(
+            DaprClient daprClient,
+            ISpeciesService speciesService,
+            ILogger<AdministrationController> logger)
         {
             _daprClient = daprClient;
-            SpeciesService = speciesService;
+            _speciesService = speciesService;
             _logger = logger;
         }
 
-        [HttpPost]
+        [HttpPost("animals")]
         public async Task<IActionResult> CreateAnimal([FromBody] Animal animal)
         {
             try
             {
-                var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
+                // Id til at tracke workflow
+                var workflowId = Guid.NewGuid().ToString();
+                _logger.LogInformation($"Starting animal creation workflow: {workflowId}");
+
+                var speciesId = new SpeciesId(Guid.NewGuid(), _speciesService);
                 var newAnimal = new Animal(
                     id: Guid.NewGuid(),
                     name: animal.Name,
@@ -37,93 +44,46 @@ namespace Administration.Api.Controllers
                 );
                 newAnimal.SetWeight(new Weight(animal.Weight.Value));
 
-                // Publish
-                //var startResponse = await _daprClient.StartWorkflowAsync();
-                await _daprClient.PublishEventAsync("pubsub", "animal-created", newAnimal);
-                //return Ok();
-                return CreatedAtAction(nameof(CreateAnimal), new { id = newAnimal.Id }, newAnimal);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
-        //Anden version
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Animal animal)
-        {
-            try
-            {
-                var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
-                var newAnimal = new Animal(
-                    id: Guid.NewGuid(),
-                    name: animal.Name,
-                    Category: animal.Category,
-                    speciesId: speciesId
-                );
-                newAnimal.SetWeight(new Weight(animal.Weight.Value));
 
-                // Create event message
                 var eventMessage = new AnimalCreatedEvent
                 {
                     Id = newAnimal.Id,
                     Name = newAnimal.Name,
-                    //Category = newAnimal.Category,
-                    //Weight = newAnimal.Weight.Value,
-                    //SpeciesId = newAnimal.SpeciesId.Value
+                    //Her kunne jeg også sende Category, Weight og SpeciesId
                 };
 
-                // Publish with retry logic
-                try
-                {
-                    await _daprClient.PublishEventAsync("pubsub", "animal-created", eventMessage);
-                    return CreatedAtAction(nameof(CreateAnimal), new { id = newAnimal.Id }, newAnimal);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to publish animal-created event");
-                    // Consider if you want to fail the request or just log the error
-                    return StatusCode(500, "Failed to publish event");
-                }
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
-
-
-        [HttpPost]
-        public async Task<IActionResult> WorkflowCreateExample(AnimalCreatedEvent animalCreatedEvent)
-        {
-            await _daprClient.RaiseWorkflowEventAsync("animal-workflow", "create","EventName", animalCreatedEvent);
-            return Ok();
-        }
-
-        ///////////////////////////////////
-        [HttpPost]
-        public async Task<IActionResult> NewCreateAnimal([FromBody] Animal animal)
-        {
-            try
-            {
-                var workflowId = Guid.NewGuid().ToString();
+                // Egentlige workflow implementering
                 var startResponse = await _daprClient.StartWorkflowAsync(
-                    "animal-workflow",
+                    "animal-created",
                     "dapr",
                     workflowId,
-                    animal);
+                    eventMessage);
 
-                return AcceptedAtAction(nameof(GetWorkflowStatus),
+                _logger.LogInformation($"{startResponse.InstanceId}");
+
+
+                return AcceptedAtAction(
+                    nameof(GetWorkflowStatus),
                     new { workflowId = startResponse.InstanceId },
-                    new { workflowId = startResponse.InstanceId });
+                    new
+                    {
+                        workflowId = startResponse.InstanceId,
+                        animalId = newAnimal.Id,
+                        status = "Processing"
+                    });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to start animal creation workflow");
+                _logger.LogError(ex, "Failed to create animal");
                 return StatusCode(500, new { error = "Failed to process request" });
             }
         }
-
+        /// <summary>
+        /// Henter status på workflow. 
+        /// https://docs.dapr.io/developing-applications/building-blocks/workflow/howto-manage-workflow/
+        /// </summary>
+        /// <param name="workflowId"></param>
+        /// <returns></returns>
         [HttpGet("workflow/{workflowId}")]
         public async Task<IActionResult> GetWorkflowStatus(string workflowId)
         {
@@ -134,13 +94,12 @@ namespace Administration.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get workflow status");
+                _logger.LogError(ex, $"{workflowId}");
                 return StatusCode(500, new { error = "Failed to get workflow status" });
             }
         }
-
-        ///////////////////////////////////
     }
+
 }
 
 

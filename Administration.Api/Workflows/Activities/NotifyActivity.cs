@@ -1,4 +1,5 @@
 ﻿using Administration.Domain.ValueObjects;
+using CommonAssets.EventDtos;
 using Dapr.Client;
 using Dapr.Workflow;
 using System.Reactive;
@@ -16,6 +17,7 @@ namespace Administration.Api.Workflows.Activities
     public class NotifyActivity : WorkflowActivity<Domain.ValueObjects.Notification, Unit>
     {
         private readonly DaprClient _daprClient;
+        private readonly string STATE_STORE = "statestore";
 
         public NotifyActivity(DaprClient daprClient)
         {
@@ -24,6 +26,8 @@ namespace Administration.Api.Workflows.Activities
 
         public override async Task<Unit> RunAsync(WorkflowActivityContext context, Domain.ValueObjects.Notification notification)
         {
+            await _daprClient.SaveStateAsync(STATE_STORE, $"Notification: Animal ID: {notification.Animal.Id}", new NotificationState { Status = "Started"} );
+            try { 
             var notificationEvent = new
             {
                 Message = notification.Message,
@@ -37,7 +41,21 @@ namespace Administration.Api.Workflows.Activities
                 "animal-created",
                 notificationEvent);
 
+            await _daprClient.SaveStateAsync(
+                 STATE_STORE,
+                 $"notification-{notification.Animal.Id}",
+                 new NotificationState { Status = "Completed" });
+
             return Unit.Default;
+            }
+            catch (Exception ex)
+            {
+                await _daprClient.SaveStateAsync(
+                    STATE_STORE,
+                    $"notification-{notification.Animal.Id}",
+                    new NotificationState { Status = "Failed" });
+                throw ex;
+            }
         }
     }
 

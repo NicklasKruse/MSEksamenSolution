@@ -5,11 +5,12 @@ using Administration.Domain.ValueObjects;
 using CommonAssets;
 using CommonAssets.EventDtos;
 using Dapr.Workflow;
+using System.Reactive;
 
 
 namespace Administration.Api.Workflows
 {
-    public class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
+    public partial class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
     {
         private readonly ISpeciesService SpeciesService;
         private readonly ILogger<AnimalWorkflow> _logger;
@@ -21,6 +22,17 @@ namespace Administration.Api.Workflows
 
         public override async Task<AnimalCreatedEvent> RunAsync(WorkflowContext context, Animal animal)
         {
+
+            var retryOptions = new WorkflowTaskOptions
+            {
+                // Retry policy - Retry efter 5 sekunder. backOffCoefficient betyder at den fordobler intervallet for hver forsøg. 
+                // forhåbningen er at den prøver efter 5, 10, 20 og 40 sekunder
+                RetryPolicy = new WorkflowRetryPolicy(firstRetryInterval: TimeSpan.FromSeconds(5), backoffCoefficient: 2.0,
+                maxRetryInterval: TimeSpan.FromSeconds(40), maxNumberOfAttempts: 4)
+            };
+
+            // Denne activity er uden for try/catch scope, udelukkende for at kunne bruge newAnimal i min catch block til at starte en compensating transaction
+            // Så må vi bare håbe denne activity ikke fejler, for så er der ingen compensating transaction :D skal nok lige tænke over det
             var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
 
             var newAnimal = await context.CallActivityAsync<Animal>(
@@ -29,26 +41,36 @@ namespace Administration.Api.Workflows
 
             newAnimal.SetWeight(new Weight(animal.Weight.Value));
 
-            var animalCreatedEvent = new AnimalCreatedEvent
+            try
             {
-                Id = newAnimal.Id,
-                Name = newAnimal.Name,
-                //Category = newAnimal.Category,
-                //Weight = newAnimal.Weight.Value,
-                //SpeciesId = newAnimal.SpeciesId.Value
-            };
+                var animalCreatedEvent = new AnimalCreatedEvent
+                {
+                    Id = newAnimal.Id,
+                    Name = newAnimal.Name,
+                };
 
-            // Publish 
-            await context.CallActivityAsync(
-                nameof(PublishEventActivity),
-                new CommonAssets.PublishEventRequest("pubsub", "animal-created", animalCreatedEvent));
+                // Publish 
+                await context.CallActivityAsync(
+                    nameof(PublishEventActivity),
+                    new PublishEventRequest("pubsub", "animal-created", animalCreatedEvent), retryOptions);
 
-            // notification
-            await context.CallActivityAsync(
-                nameof(NotifyActivity),
-                new Notification("Completed Reg.", newAnimal));
+                // notification
+                await context.CallActivityAsync(
+                    nameof(NotifyActivity),
+                    new Domain.ValueObjects.Notification("Activity called", newAnimal));
 
-            return animalCreatedEvent;
+                return animalCreatedEvent;
+            }
+            catch (Exception ex)
+            {
+                // Compensating Transactions ikke implementeret korrekt. Men de kunne være her
+                _logger.LogError(ex, "Notification failed, executing compensation");
+                await context.CallActivityAsync(
+                    nameof(CompensateNotificationActivity),
+                    newAnimal,
+                    retryOptions);
+                throw;
+            }
         }
 
         #region Placeholder til service registrering

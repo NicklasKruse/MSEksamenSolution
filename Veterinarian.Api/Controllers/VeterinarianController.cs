@@ -1,5 +1,6 @@
 using CommonAssets.EventDtos;
 using Dapr;
+using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Veterinarian.Domain;
 using Veterinarian.Domain.ValueObjects;
@@ -11,12 +12,15 @@ namespace Veterinarian.Api.Controllers
     public class VeterinarianController : ControllerBase
     {
         private readonly ILogger<VeterinarianController> _logger;
-        public VeterinarianController(ILogger<VeterinarianController> logger)
+        private readonly DaprClient _daprClient;
+        //private readonly IAppointmentRepository _appointmentRepository;
+        public VeterinarianController(ILogger<VeterinarianController> logger, DaprClient daprClient)
         {
             _logger = logger;
+            _daprClient = daprClient;
+            //_appointmentRepository = appointmentRepository;
         }
-        //Repo interface?
-        //Logger?
+
         [Topic("pubsub", "animal-created")]
         [HttpPost("animal-created")]
         public async Task<IActionResult> HandleAnimalCreated(CaseId Case)
