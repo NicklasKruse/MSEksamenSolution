@@ -1,13 +1,10 @@
-using Administration.Api.Workflows.Activities;
 using Administration.Domain.DomainServices;
 using Administration.Domain.Entities;
 using Administration.Domain.ValueObjects;
 using CommonAssets;
 using CommonAssets.EventDtos;
 using Dapr.Client;
-using Dapr.Workflow;
 using Microsoft.AspNetCore.Mvc;
-using System.Reactive;
 
 namespace Administration.Api.Controllers
 {
@@ -143,41 +140,6 @@ namespace Administration.Api.Controllers
         }
 
         ///////////////////////////////////
-    }
-    public class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
-    {
-        private readonly ISpeciesService SpeciesService;
-        public AnimalWorkflow(ISpeciesService speciesService)
-        {
-            SpeciesService = speciesService;
-        }
-        public override async Task<AnimalCreatedEvent> RunAsync(WorkflowContext context, Animal animal)
-        {
-            var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
-         
-
-            var newAnimal = await context.CallActivityAsync<Animal>(
-               nameof(CreateAnimalActivity),
-               new CreateAnimalRequest(animal, speciesId));
-
-            newAnimal.SetWeight(new Weight(animal.Weight.Value));
-
-
-
-            await context.CallActivityAsync("CreateAnimal", newAnimal);
-            await context.CallActivityAsync(
-           nameof(NotifyActivity),
-           new Domain.ValueObjects.Notification("Completed Reg.", newAnimal));
-
-            return new AnimalCreatedEvent
-            {
-                Id = newAnimal.Id,
-                Name = newAnimal.Name,
-                //Category = newAnimal.Category,
-                //Weight = newAnimal.Weight.Value,
-                //SpeciesId = newAnimal.SpeciesId.Value
-            };
-        }
     }
 }
 

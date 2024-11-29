@@ -1,5 +1,8 @@
+using Administration.Api.Workflows;
+using Administration.Api.Workflows.Activities;
 using Administration.ContextLibrary;
 using Administration.Domain.DomainServices;
+using Dapr.Workflow;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +16,14 @@ builder.Services.AddSwaggerGen();
 
 //dapr
 builder.Services.AddControllers().AddDapr();
+builder.Services.AddDaprWorkflow(options =>
+{
+    options.RegisterWorkflow<AnimalWorkflow>();
+    options.RegisterActivity<CreateAnimalActivity>();
+    options.RegisterActivity<PublishEventActivity>();
+    options.RegisterActivity<NotifyActivity>();
+});
+
 
 // ved explicit pubsub 
 //builder.Services.AddControllers()
