@@ -10,3 +10,29 @@ spec:
 scopes: #burde begrænse adgang til kun at være fra veterinarian og admin
 - administration.api
 - veterinarian.api
+
+--- #de her adskiller de forskellige subscriptions fra hinanden
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: appointment-subscription
+spec:
+  topic: appointment-created
+  routes:
+    default: /veterinarian/appointment-created
+  pubsubname: pubsub
+scopes:
+  - veterinarian.api
+
+--- 
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: appointment-cancellation-subscription
+spec:
+  topic: animal-creation-cancelled
+  routes:
+    default: /veterinarian/animal-creation-cancelled
+  pubsubname: pubsub
+scopes:
+  - veterinarian.api

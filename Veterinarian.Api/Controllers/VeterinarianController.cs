@@ -23,35 +23,27 @@ namespace Veterinarian.Api.Controllers
 
         [Topic("pubsub", "animal-created")]
         [HttpPost("animal-created")]
-        public async Task<IActionResult> HandleAnimalCreated(CaseId Case)
+        public async Task<IActionResult> HandleAnimalCreated(AnimalCreatedEvent animalEvent)
         {
-            var caseId = new CaseId(Case.Value);
-            var appointment = new Appointment(caseId);
-            //Yderligere oprettelse af appointment, til persistens (når jeg har en repo implementering)
-            return Ok(new
-            {
-                AppointmentId = appointment.Id,
-                CaseId = caseId.Value
-            });
-        }
-
-        // anden version
-        [Topic("pubsub", "animal-created")]
-        [HttpPost("animal-created")]
-        public async Task<IActionResult> AnimalCreated(AnimalCreatedEvent animalEvent)
-        {
+            _logger.LogInformation($"Her bekræfter vi at vi har modtaget animal-created event:", animalEvent.Id);
             try
             {
-                _logger.LogInformation("Received animal-created event for animal: {AnimalId}", animalEvent.Id);
-
-                var caseId = new CaseId(Guid.NewGuid());
-                var appointment = new Appointment(caseId)
+                var caseId = new CaseId(Guid.NewGuid()); //Ideen er at det her skal være selve animal objekted
+                var appointment = new Appointment(caseId) // Og det her skal være den interne appointment, Hvori der er en reference til det specfikke animal
                 {
                     Id = animalEvent.Id,
                     CreatedAtTime = DateTime.UtcNow
                 };
 
-                //await _appointmentRepository.SaveAppointmentAsync(appointment); Repo
+                //Yderligere oprettelse af appointment, til persistens (når jeg har en repo implementering)
+                //await _appointmentRepository.SaveAppointmentAsync(appointment);
+
+                await _daprClient.PublishEventAsync("pubsub", "appointment-created", new
+                {
+                    AppointmentId = appointment.Id,
+                    CaseId = caseId.Value,
+                    Status = "Success"
+                });
 
                 return Ok(new
                 {
@@ -62,7 +54,43 @@ namespace Veterinarian.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing animal-created event");
+
+                // Publish failure event for saga compensation
+                await _daprClient.PublishEventAsync("pubsub", "appointment-failed", new
+                {
+                    AnimalId = animalEvent.Id,
+                    Error = ex.Message
+                });
+
                 return StatusCode(500, new { error = "Failed to process animal creation" });
+            }
+        }
+
+        // Cancelled version
+        [Topic("pubsub", "animal-creation-cancelled")]
+        [HttpPost("animal-creation-cancelled")]
+        public async Task<IActionResult> HandleAnimalCreationCancelled(AnimalCreationCancelledEvent cancelEvent)
+        {
+            try
+            {
+                // Compensating transaction - cancel appointment
+                //await _appointmentRepository.CancelAppointmentAsync(cancelEvent.AnimalId);
+
+                _logger.LogInformation("Bekræfter at vi har modtaget animal-created event", cancelEvent.AnimalId);
+
+                //animal-creation-cancelled / appointment-cancelled ??
+                await _daprClient.PublishEventAsync("pubsub", "appointment-cancelled", new
+                {
+                    AnimalId = cancelEvent.AnimalId,
+                    Status = "Cancelled"
+                });
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fejlbesked i tilfælde af at flow der skal aflyse en appointment ikke virker");
+                return StatusCode(500, new { error = "fejlbesked angående fejlede flow" });
             }
         }
     }
