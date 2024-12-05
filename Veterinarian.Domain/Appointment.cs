@@ -1,7 +1,7 @@
 ﻿using CommonAssets;
 using CommonAssets.ResultPattern;
 using Veterinarian.Domain.ValueObjects;
-using Veterinarian.Domain.ValueObjects.CaseHealthStatusObjects;
+using Veterinarian.Domain.ValueObjects.CaseHealthStatusObjects.Aggregate;
 
 namespace Veterinarian.Domain
 {

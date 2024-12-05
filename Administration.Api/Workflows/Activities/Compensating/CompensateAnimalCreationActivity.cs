@@ -9,16 +9,32 @@ namespace Administration.Api.Workflows
     public class CompensateAnimalCreationActivity : WorkflowActivity<Animal, Unit>
     {
         private readonly DaprClient _daprClient;
+        private readonly ILogger<CompensateAnimalCreationActivity> _logger;
 
-        public CompensateAnimalCreationActivity(DaprClient daprClient)
+        public CompensateAnimalCreationActivity(DaprClient daprClient, ILogger<CompensateAnimalCreationActivity> logger)
         {
             _daprClient = daprClient;
+            _logger = logger;
         }
 
         public override async Task<Unit> RunAsync(WorkflowActivityContext context, Animal animal)
         {
-            // Her kunne et event sendes tilbage til pubsub, som kunne fortælle at en animal er blevet slettet
-            await Task.CompletedTask;
+            try
+            {
+                // sletter animal. Her skal vi have et tilsvarende topic for at det skal virke
+                await _daprClient.PublishEventAsync(
+                    "pubsub",
+                    "animal-deleted",
+                    new { AnimalId = animal.Id, Timestamp = DateTime.UtcNow });
+
+                _logger.LogInformation("Comp. transactions fuldført {}", animal.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Comp. Transaction fejlede {}", animal.Id);
+                throw; 
+            }
+
             return Unit.Default;
         }
     }

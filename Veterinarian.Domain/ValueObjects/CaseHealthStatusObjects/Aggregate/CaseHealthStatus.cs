@@ -1,6 +1,6 @@
 ﻿using CommonAssets.ResultPattern;
 
-namespace Veterinarian.Domain.ValueObjects.CaseHealthStatusObjects
+namespace Veterinarian.Domain.ValueObjects.CaseHealthStatusObjects.Aggregate
 {
     public record CaseHealthStatus
     {

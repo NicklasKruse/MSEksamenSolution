@@ -5,7 +5,6 @@ using Administration.Domain.ValueObjects;
 using CommonAssets;
 using CommonAssets.EventDtos;
 using Dapr.Workflow;
-using System.Reactive;
 
 
 namespace Administration.Api.Workflows
@@ -63,13 +62,36 @@ namespace Administration.Api.Workflows
             }
             catch (Exception ex)
             {
-                // Compensating Transactions ikke implementeret korrekt. Men de kunne være her
-                _logger.LogError(ex, "Notification failed, executing compensation");
-                await context.CallActivityAsync(
-                    nameof(CompensateNotificationActivity),
-                    newAnimal,
-                    retryOptions);
-                throw;
+                _logger.LogError(ex, "Workflow failed, executing compensation");
+
+                if (newAnimal != null)
+                {
+                    try
+                    {
+                        // Compensate i omvendt rækkefølge
+                        await context.CallActivityAsync(
+                            nameof(CompensateNotificationActivity),
+                            newAnimal,
+                            retryOptions);
+
+                        await context.CallActivityAsync(
+                            nameof(CompensateEventPublishActivity),
+                            newAnimal,
+                            retryOptions);
+
+                        await context.CallActivityAsync(
+                            nameof(CompensateAnimalCreationActivity),
+                            newAnimal,
+                            retryOptions);
+                    }
+                    catch (Exception compensationEx)
+                    {
+                        _logger.LogError(compensationEx, "Compensation failed");
+                        // Hvis vores compensating transactions fejler
+                    }
+                }
+
+                throw; 
             }
         }
 
