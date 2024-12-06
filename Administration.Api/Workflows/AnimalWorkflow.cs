@@ -53,10 +53,12 @@ namespace Administration.Api.Workflows
                     nameof(PublishEventActivity),
                     new PublishEventRequest("pubsub", "animal-created", animalCreatedEvent), retryOptions);
 
+                //await context.WaitForExternalEventAsync<>(); external event eksempel
+
                 // notification
                 await context.CallActivityAsync(
                     nameof(NotifyActivity),
-                    new Domain.ValueObjects.Notification("Activity called", newAnimal));
+                    new Notification("Activity called", newAnimal));
 
                 return animalCreatedEvent;
             }
@@ -83,6 +85,8 @@ namespace Administration.Api.Workflows
                             nameof(CompensateAnimalCreationActivity),
                             newAnimal,
                             retryOptions);
+
+                        
                     }
                     catch (Exception compensationEx)
                     {
