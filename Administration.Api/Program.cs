@@ -22,6 +22,11 @@ builder.Services.AddDaprWorkflow(options =>
     options.RegisterActivity<CreateAnimalActivity>();
     options.RegisterActivity<PublishEventActivity>();
     options.RegisterActivity<NotifyActivity>();
+
+    //Compensating
+    options.RegisterActivity<CompensateAnimalCreationActivity>();
+    options.RegisterActivity<CompensateEventPublishActivity>();
+    options.RegisterActivity<CompensateNotificationActivity>();
 });
 
 
