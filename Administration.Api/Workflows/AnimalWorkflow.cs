@@ -84,8 +84,6 @@ namespace Administration.Api.Workflows
                             nameof(CompensateAnimalCreationActivity),
                             newAnimal,
                             retryOptions);
-
-
                     }
                     catch (Exception compensationEx)
                     {
@@ -93,7 +91,6 @@ namespace Administration.Api.Workflows
                         // Hvis vores compensating transactions fejler
                     }
                 }
-
                 throw;
             }
         }

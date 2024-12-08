@@ -1,3 +1,4 @@
+using Administration.Api.Workflows;
 using Administration.Domain.DomainServices;
 using Administration.Domain.Entities;
 using Administration.Domain.ValueObjects;
@@ -26,14 +27,14 @@ namespace Administration.Api.Controllers
             _logger = logger;
         }
 
-        [HttpPost("animals")]
+        [HttpPost]
         public async Task<IActionResult> CreateAnimal([FromBody] Animal animal)
         {
             try
             {
                 // Id til at tracke workflow
                 var workflowId = Guid.NewGuid().ToString();
-                _logger.LogInformation($"Starting animal creation workflow: {workflowId}");
+                _logger.LogInformation($"Starter animal creation workflow: {workflowId}");
 
                 var speciesId = new SpeciesId(Guid.NewGuid(), _speciesService);
                 var newAnimal = new Animal(
@@ -45,22 +46,14 @@ namespace Administration.Api.Controllers
                 newAnimal.SetWeight(new Weight(animal.Weight.Value));
 
 
-                var eventMessage = new AnimalCreatedEvent
-                {
-                    Id = newAnimal.Id,
-                    Name = newAnimal.Name,
-                    //Her kunne jeg også sende Category, Weight og SpeciesId
-                };
-
-                // Egentlige workflow implementering
+                // Workflow starter
                 var startResponse = await _daprClient.StartWorkflowAsync(
-                    "animal-created",
-                    "dapr",
-                    workflowId,
-                    eventMessage);
+                workflowId, // Instance ID
+                "dapr", // Workflow component navn. workflow.yaml filen - hedder bare dapr deri.
+                nameof(AnimalWorkflow), // Workflow navn
+                newAnimal); // Input parameter
 
                 _logger.LogInformation($"{startResponse.InstanceId}");
-
 
                 return AcceptedAtAction(
                     nameof(GetWorkflowStatus),
