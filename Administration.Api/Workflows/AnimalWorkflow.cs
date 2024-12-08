@@ -35,8 +35,7 @@ namespace Administration.Api.Workflows
             var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
 
             var newAnimal = await context.CallActivityAsync<Animal>(
-                nameof(CreateAnimalActivity),
-                new CreateAnimalRequest(animal, speciesId));
+            nameof(CreateAnimalActivity),animal);
 
             newAnimal.SetWeight(new Weight(animal.Weight.Value));
 
@@ -86,7 +85,7 @@ namespace Administration.Api.Workflows
                             newAnimal,
                             retryOptions);
 
-                        
+
                     }
                     catch (Exception compensationEx)
                     {
@@ -95,7 +94,7 @@ namespace Administration.Api.Workflows
                     }
                 }
 
-                throw; 
+                throw;
             }
         }
 
