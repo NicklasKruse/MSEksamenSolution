@@ -21,17 +21,39 @@ namespace Administration.Api.Workflows
         {
             try
             {
+                var stateKey = $"compensation-event-{animal.Id}";
+                var state = await _daprClient.GetStateAsync<CompensationState>("statestore", stateKey);
+
+                if (state?.IsCompleted == true)
+                {
+                    return Unit.Default;
+                }
+
+                // Publish event til pubsub med information om at animal creation er blevet annulleret
                 await _daprClient.PublishEventAsync(
                     "pubsub",
-                    "animal-creation-cancelled", // det er en compensating på animal-created. Så her har vi en til hvis den er cancelled af en eller anden grund.
-                    new { AnimalId = animal.Id, Timestamp = DateTime.UtcNow });
+                    "animal-creation-cancelled",
+                    new
+                    {
+                        AnimalId = animal.Id,
+                        Timestamp = DateTime.UtcNow
+                    });
 
-                _logger.LogInformation("Compensating transaction fuldendt på {AnimalId}", animal.Id);
+                await _daprClient.SaveStateAsync(
+                    "statestore",
+                    stateKey,
+                    new CompensationState
+                    {
+                        IsCompleted = true,
+                        Timestamp = DateTime.UtcNow
+                    });
+
+                _logger.LogInformation("Compensation event published for {AnimalId}", animal.Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Transaction fejlede animal: {AnimalId}", animal.Id);
-                throw; 
+                _logger.LogError(ex, "Publish compensation event fejlede: {AnimalId}", animal.Id);
+                throw;
             }
 
             return Unit.Default;

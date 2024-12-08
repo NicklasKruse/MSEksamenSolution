@@ -9,7 +9,7 @@ using Dapr.Workflow;
 
 namespace Administration.Api.Workflows
 {
-    public partial class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
+    public class AnimalWorkflow : Workflow<Animal, AnimalCreatedEvent>
     {
         private readonly ISpeciesService SpeciesService;
         private readonly ILogger<AnimalWorkflow> _logger;
@@ -30,76 +30,55 @@ namespace Administration.Api.Workflows
                 maxRetryInterval: TimeSpan.FromSeconds(40), maxNumberOfAttempts: 4)
             };
 
-            // Denne activity er uden for try/catch scope, udelukkende for at kunne bruge newAnimal i min catch block til at starte en compensating transaction
-            // Så må vi bare håbe denne activity ikke fejler, for så er der ingen compensating transaction :D skal nok lige tænke over det
-            var speciesId = new SpeciesId(Guid.NewGuid(), SpeciesService);
-
-            var newAnimal = await context.CallActivityAsync<Animal>(
-            nameof(CreateAnimalActivity),animal);
-
-            newAnimal.SetWeight(new Weight(animal.Weight.Value));
-
             try
             {
+                // Opret Animal vha. CreateAnimalActivity
+                var createdAnimal = await context.CallActivityAsync<Animal>(
+                    nameof(CreateAnimalActivity),
+                    animal,
+                    retryOptions);
+
                 var animalCreatedEvent = new AnimalCreatedEvent
                 {
-                    Id = newAnimal.Id,
-                    Name = newAnimal.Name,
+                    Id = createdAnimal.Id,
+                    Name = createdAnimal.Name,
                 };
 
-                // Publish 
+                // Publish event vha. PublishEventActivity. Bruger AnimalCreatedEvent i stedet for Animal, da det er det vi vil sende.
                 await context.CallActivityAsync(
                     nameof(PublishEventActivity),
-                    new PublishEventRequest("pubsub", "animal-created", animalCreatedEvent), retryOptions);
-
-                //await context.WaitForExternalEventAsync<>(); external event eksempel
-
-                // notification
-                await context.CallActivityAsync(
-                    nameof(NotifyActivity),
-                    new Notification("Activity called", newAnimal));
+                    animalCreatedEvent,
+                    retryOptions);
 
                 return animalCreatedEvent;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Workflow failed, executing compensation");
-
-                if (newAnimal != null)
+                try
                 {
-                    try
-                    {
-                        // Compensate i omvendt rækkefølge
-                        await context.CallActivityAsync(
-                            nameof(CompensateNotificationActivity),
-                            newAnimal,
-                            retryOptions);
+                    await context.CallActivityAsync(
+                        nameof(CompensateEventPublishActivity),
+                        animal,
+                        retryOptions);
 
-                        await context.CallActivityAsync(
-                            nameof(CompensateEventPublishActivity),
-                            newAnimal,
-                            retryOptions);
-
-                        await context.CallActivityAsync(
-                            nameof(CompensateAnimalCreationActivity),
-                            newAnimal,
-                            retryOptions);
-                    }
-                    catch (Exception compensationEx)
-                    {
-                        _logger.LogError(compensationEx, "Compensation failed");
-                        // Hvis vores compensating transactions fejler
-                    }
+                    await context.CallActivityAsync(
+                        nameof(CompensateAnimalCreationActivity),
+                        animal,
+                        retryOptions);
+                }
+                catch (Exception compensationEx)
+                {
+                    _logger.LogError(compensationEx, "Compensation failed");
                 }
                 throw;
             }
         }
 
         #region Placeholder til service registrering
-        public AnimalWorkflow()
-        {
-            //Placeholder til service registrering
-        }
+        //public AnimalWorkflow()
+        //{
+        //    //Placeholder til service registrering
+        //}
         #endregion
     }
 }

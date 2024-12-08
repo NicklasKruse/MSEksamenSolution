@@ -10,7 +10,7 @@ namespace Administration.Api.Workflows
     {
         private readonly DaprClient _daprClient;
         private readonly ILogger<CompensateAnimalCreationActivity> _logger;
-        private readonly IRepositoryEx _repository; //repo eksempel
+        private readonly IRepositoryEx _repository; 
 
         public CompensateAnimalCreationActivity(DaprClient daprClient, ILogger<CompensateAnimalCreationActivity> logger, IRepositoryEx repository)
         {
@@ -23,40 +23,32 @@ namespace Administration.Api.Workflows
         {
             try
             {
+                // vi bruger en statestore til at holde styr på om vi har fuldført kompensationen
+                var stateKey = $"compensation-animal-creation-{animal.Id}"; //giv den et unikt navn vha. animal.Id. 
+                var state = await _daprClient.GetStateAsync<CompensationState>(
+                    "statestore",
+                    stateKey); 
+                // her tjekker vi om kompensationen allerede er fuldført
+                if (state?.IsCompleted == true)
+                {
+                    _logger.LogInformation("Compensation allerede fuldført {}", animal.Id);
+                    return Unit.Default;
+                }
 
                 var existingAnimal = await _repository.GetByIdAsync(animal.Id);
                 if (existingAnimal == null)
                 {
-                    _logger.LogInformation("Animal {} already deleted, skipping compensation", animal.Id);
-                    return Unit.Default;
-                }
-
-                // vi bruger en statestore til at holde styr på om vi har fuldført kompensationen
-                var compensationKey = $"compensation-tracking-{animal.Id}"; //giv den et unikt navn vha. animal.Id. 
-                var compensationState = await _daprClient.GetStateAsync<CompensationState>(
-                    "statestore",
-                    compensationKey); 
-
-                // her tjekker vi om kompensationen allerede er fuldført
-                if (compensationState?.IsCompleted == true)
-                {
-                    _logger.LogInformation("Compensation allerede fuldført {}", animal.Id);
+                    _logger.LogInformation("Animal {} er allerede blevet slettet fra db", animal.Id);
                     return Unit.Default;
                 }
 
                 // Slet animal
                 await _repository.DeleteAsync(animal.Id);
 
-                // Event til pubsub om at animal er slettet
-                await _daprClient.PublishEventAsync(
-                    "pubsub",
-                    "animal-deleted",
-                    new { AnimalId = animal.Id, Timestamp = DateTime.UtcNow });
-
                 // sæt state i statestore til completed
                 await _daprClient.SaveStateAsync(
                "statestore",
-               compensationKey,
+               stateKey,
                new CompensationState { 
                    IsCompleted = true, 
                    Timestamp = DateTime.UtcNow 
@@ -72,16 +64,6 @@ namespace Administration.Api.Workflows
 
             return Unit.Default;
         }
-    }
-    /// <summary>
-    /// Repo eksempel
-    /// </summary>
-    public interface IRepositoryEx
-    {
-        Task<Animal> GetByIdAsync(Guid id);
-        Task DeleteAsync(Guid id);
-
-        Task<Animal> CreateAsync(Animal animal);// til CreateAnimalActivity
     }
 }
 

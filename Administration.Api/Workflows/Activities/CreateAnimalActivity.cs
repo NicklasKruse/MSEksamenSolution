@@ -22,25 +22,19 @@ namespace Administration.Api.Workflows.Activities
 
         public override async Task<Animal> RunAsync(WorkflowActivityContext context, Animal animal)
         {
+
+            var stateKey = $"animal-creation-{animal.Id}";
+
+            var state = await _daprClient.GetStateAsync<ActivityState>("statestore", stateKey);
+            if (state?.IsCompleted == true)
+            {
+                return animal;
+            }
+
             try {
                 _logger.LogInformation("Påbegyndt oprettelse af animal ID: {AnimalId}", animal.Id);
 
-                var existing = await _repository.GetByIdAsync(animal.Id);
-                if (existing != null)
-                {
-                    _logger.LogWarning("Animal eksisterer allerede {AnimalId} ", animal.Id);
-                }
-
                 var createdAnimal = await _repository.CreateAsync(animal);
-
-                await _daprClient.PublishEventAsync(
-               "pubsub", // subscription.yaml pubsub name
-               "animal-created", // Topic
-               new AnimalCreatedEvent
-               {
-                   Id = createdAnimal.Id,
-                   Name = createdAnimal.Name
-               });
 
                 await _daprClient.SaveStateAsync(
                 "statestore",
@@ -55,15 +49,7 @@ namespace Administration.Api.Workflows.Activities
             }
             catch (Exception ex)
             {
-                await _daprClient.PublishEventAsync(
-                "pubsub",
-                "animal-creation-cancelled",
-                new
-                {
-                    AnimalId = animal.Id,
-                    Timestamp = DateTime.UtcNow,
-                    Error = ex.Message
-                });
+                _logger.LogError(ex, "Kunne ikke oprette Animal: {AnimalId}", animal.Id);
                 throw;
             }
         }

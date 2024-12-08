@@ -14,6 +14,9 @@ namespace Administration.Api.Workflows.Activities
     //        return null;
     //    }
     //}
+    /// <summary>
+    /// Ikke i brug!
+    /// </summary>
     public class NotifyActivity : WorkflowActivity<Domain.ValueObjects.Notification, Unit>
     {
         private readonly DaprClient _daprClient;
@@ -26,11 +29,24 @@ namespace Administration.Api.Workflows.Activities
 
         public override async Task<Unit> RunAsync(WorkflowActivityContext context, Domain.ValueObjects.Notification notification)
         {
-            await _daprClient.SaveStateAsync(STATE_STORE, $"Notification: Animal ID: {notification.Animal.Id}", new NotificationState { Status = "Started"} );
-            try { 
-            var notificationEvent = new
+
+            var stateKey = $"notification-{notification.Animal.Id}";
+
+            var state = await _daprClient.GetStateAsync<NotificationState>("statestore", stateKey);
+            if (state?.Status == "Completed")
             {
-                Message = notification.Message,
+                return Unit.Default;
+            }
+
+            try {
+
+                await _daprClient.SaveStateAsync(
+                 "statestore",
+                 stateKey,
+                 new NotificationState { Status = "Started" });
+
+                var notificationEvent = new
+            {
                 AnimalId = notification.Animal.Id,
                 AnimalName = notification.Animal.Name,
                 Timestamp = DateTime.UtcNow

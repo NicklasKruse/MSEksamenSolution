@@ -16,7 +16,21 @@ namespace Administration.Api.Workflows.Activities
 
         public override async Task<Unit> RunAsync(WorkflowActivityContext context, AnimalCreatedEvent eventData)
         {
+            var stateKey = $"event-publish-{eventData.Id}";
+
+            var state = await _daprClient.GetStateAsync<ActivityState>("statestore", stateKey);
+            if (state?.IsCompleted == true)
+            {
+                return Unit.Default;
+            }
+
             await _daprClient.PublishEventAsync("pubsub", "animal-created", eventData);
+
+            await _daprClient.SaveStateAsync(
+           "statestore",
+           stateKey,
+           new ActivityState { IsCompleted = true, Timestamp = DateTime.UtcNow });
+
             return Unit.Default;
         }
     }
