@@ -1,8 +1,6 @@
 ﻿using Administration.Api.Workflows.Activities;
 using Administration.Domain.DomainServices;
 using Administration.Domain.Entities;
-using Administration.Domain.ValueObjects;
-using CommonAssets;
 using CommonAssets.EventDtos;
 using Dapr.Workflow;
 
@@ -75,10 +73,10 @@ namespace Administration.Api.Workflows
         }
 
         #region Placeholder til service registrering
-        //public AnimalWorkflow()
-        //{
-        //    //Placeholder til service registrering
-        //}
+        public AnimalWorkflow()
+        {
+            //Placeholder til service registrering
+        }
         #endregion
     }
 }

@@ -3,7 +3,6 @@ using Administration.Domain.DomainServices;
 using Administration.Domain.Entities;
 using Administration.Domain.ValueObjects;
 using CommonAssets;
-using CommonAssets.EventDtos;
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 
