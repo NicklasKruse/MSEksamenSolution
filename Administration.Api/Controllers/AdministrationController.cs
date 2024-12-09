@@ -54,9 +54,7 @@ namespace Administration.Api.Controllers
 
                 _logger.LogInformation($"{startResponse.InstanceId}");
 
-                return AcceptedAtAction(
-                    nameof(GetWorkflowStatus),
-                    new { workflowId = startResponse.InstanceId },
+                return Accepted(
                     new
                     {
                         workflowId = startResponse.InstanceId,
