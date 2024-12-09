@@ -12,5 +12,3 @@ spec:
     value: ""
   - name: actorStateStore
     value: "true"
-
-    #Mangler implementering af statestore. Docker compose filen mangler redis containeren.
